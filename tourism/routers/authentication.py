@@ -2,8 +2,6 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import timedelta
-from fastapi.security import OAuth2PasswordRequestForm
-
 from .. import schemas, database, models, token
 from ..hashing import Hash
 
