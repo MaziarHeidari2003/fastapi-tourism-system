@@ -1,15 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional,List
-from datetime import datetime
-
-from pydantic import BaseModel
-
-
-class ShowAirport(BaseModel):
-    name: str
-    class Config:
-        orm_mode = True
-
+from typing import List
+from datetime import date
 
 class AvailableFlights(BaseModel):
     flight_number: str
@@ -18,23 +9,23 @@ class AvailableFlights(BaseModel):
 
 
 class ChooseFlightRequest(BaseModel):
-    user_id: int
+    parent_user_id: int
     passenger_ids: List[int] 
     flight_price: float
     flight_id: int
 
 
-class Ticket(BaseModel):
-    id: int
+class TicketInUserOrders(BaseModel):
+    code: str
 
     class Config:
         orm_mode = True    
 
-class Order(BaseModel):
+class OrderInUserOrders(BaseModel):
     id: int
     code: str
     price: float
-    tickets: list[Ticket]  
+    tickets: list[TicketInUserOrders]  
 
     class Config:
         orm_mode = True
@@ -42,8 +33,6 @@ class Order(BaseModel):
 class Passengers(BaseModel):
     name: str
     national_id: str
-
-
 
 
 class User(BaseModel):
@@ -77,11 +66,34 @@ class Flight(BaseModel):
     flight_number: str
     origin_id: int
     destination_id: int
-    departure_date: datetime
-    arrival_date: datetime
+    departure_date: date
+    arrival_date: date
     price: float
     provider: str
 
     class Config:
-        orm_mode = True
+        form_attributes = True
 
+class TicketResponse(BaseModel):
+    id: int
+    order_id: int
+    flight_id: int
+    passenger_id: int
+
+    class Config:
+        from_attributes = True  
+        
+class OrderResponse(BaseModel):
+    id: int
+    code: str
+    price: float
+    user_id: int
+
+    class Config:
+        from_attributes = True  
+        
+
+class ReserveFlightResponse(BaseModel):
+    order: OrderResponse
+    tickets: List[TicketResponse]
+    passengers: List[str]

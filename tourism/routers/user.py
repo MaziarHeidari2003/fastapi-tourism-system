@@ -15,7 +15,7 @@ async def create_user(request: schemas.User, db: AsyncSession = Depends(database
     return await user.create(request, db)
 
 
-@router.get("/orders", response_model=List[schemas.Order])
+@router.get("/orders", response_model=List[schemas.OrderInUserOrders])
 async def user_orders(
     current_user: models.User = Depends(utils.get_current_user),
     db: AsyncSession = Depends(database.get_db),

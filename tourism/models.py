@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float,DATE
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -21,9 +21,7 @@ class Passenger(Base):
     national_id = Column(String, unique=True, nullable=False)
     age = Column(Integer, nullable=False)
     gender = Column(String, nullable=False)
-
-    # Link to the User who created this passenger record (optional)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    parent_user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship('User', back_populates='passengers')
 
     # Passengers have multiple tickets
@@ -41,8 +39,8 @@ class Flight(Base):
     flight_number = Column(String, unique=True, nullable=False)
     origin_id = Column(Integer, ForeignKey('airports.id'), nullable=False)
     destination_id = Column(Integer, ForeignKey('airports.id'), nullable=False)
-    departure_date = Column(DateTime, nullable=False)
-    arrival_date = Column(DateTime, nullable=False)
+    departure_date = Column(DATE, nullable=False)
+    arrival_date = Column(DATE, nullable=False)
     price = Column(Float, nullable=False)
     provider = Column(String, nullable=False)
     origin = relationship('Airport', foreign_keys=[origin_id])
@@ -55,17 +53,16 @@ class Order(Base):
     code = Column(String, unique=True, nullable=False)
     price = Column(Float, nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-
-    # Relationship with the user who made the order
     user = relationship('User', back_populates='orders')
-
-    # Relationship with the tickets (a user can have many tickets in an order)
     tickets = relationship('Ticket', back_populates='order')
-
+      
+    def __repr__(self):
+        return self.code
 class Ticket(Base):
     __tablename__ = 'tickets'
     id = Column(Integer, primary_key=True,index=True)
     passenger_id = Column(Integer, ForeignKey('passengers.id'), nullable=False)
+    code = Column(String, unique=True, nullable=False)
     flight_id = Column(Integer, ForeignKey('flights.id'), nullable=False)
     order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
     passenger = relationship('Passenger', back_populates='tickets')

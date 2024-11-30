@@ -16,14 +16,33 @@ async def create(request: schemas.User, db: AsyncSession):
     return new_user
 
 
+
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload  # or use joinedload if appropriate
+
 async def get_user_orders(current_user, db: AsyncSession):
-    result = await db.execute(select(models.Order).filter(models.Order.user_id == current_user.id))
+    result = await db.execute(
+        select(models.Order)
+        .options(selectinload(models.Order.tickets))  # Example: Eagerly load related tickets
+        .filter(models.Order.user_id == current_user.id)
+    )
     orders = result.scalars().all()
     
     if not orders:
         raise HTTPException(status_code=404, detail="No orders found for the current user")
     
     return orders
+
+
+
+# async def get_user_orders(current_user, db: AsyncSession):
+#     result = await db.execute(select(models.Order).filter(models.Order.user_id == current_user.id))
+#     orders = result.scalars().all()
+    
+#     if not orders:
+#         raise HTTPException(status_code=404, detail="No orders found for the current user")
+    
+#     return orders
 
 
 

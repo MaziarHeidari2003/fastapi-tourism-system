@@ -48,7 +48,7 @@ async def reserve_flight_for_passengers(user_id, passenger_ids, flight_price, fl
     for passenger_id in passenger_ids:
         result = await db.execute(
             select(models.Passenger.id, models.Passenger.name) 
-            .filter_by(id=passenger_id, user_id=user_id)
+            .filter_by(id=passenger_id, parent_user_id=user_id)
         )
         passenger = result.first()  
 
@@ -58,7 +58,6 @@ async def reserve_flight_for_passengers(user_id, passenger_ids, flight_price, fl
         else:
             raise HTTPException(404, detail=f"Passenger ID {passenger_id} invalid.")
 
-    # Complete in one scope
     order_code = utils.generate_code()
     order = models.Order(code=order_code, price=flight_price, user_id=user.id)
     db.add(order)
@@ -68,23 +67,33 @@ async def reserve_flight_for_passengers(user_id, passenger_ids, flight_price, fl
     
     tickets = []
     for passenger in passengers:
-        ticket = models.Ticket(order_id=order.id, flight_id=flight_id, passenger_id=passenger.id)
+        ticket = models.Ticket(order_id=order.id,code=utils.generate_code(), flight_id=flight_id, passenger_id=passenger.id)
         tickets.append(ticket)
         db.add(ticket)
 
     await db.commit()
+    for ticket in tickets:
+        await db.refresh(ticket)
 
     return {
-        "order": order,
-        "tickets": tickets,
-        "passengers": [p.name for p in passengers]
+       "order_code":order_code,
+    "tickets": [
+        {
+            "id": ticket.id,
+           
+            "passenger_id": ticket.passenger_id
+        } 
+        for ticket in tickets
+    ],
+        "passengers": [p.name for p in passengers],
     }
 
 
 
-async def create_passenger(user_id, name, national_id, age, gender, db: AsyncSession):
+
+async def create_passenger(parent_user_id, name, national_id, age, gender, db: AsyncSession):
     passenger = models.Passenger(
-        name=name, national_id=national_id, age=age, gender=gender, user_id=user_id
+        name=name, national_id=national_id, age=age, gender=gender, parent_user_id=parent_user_id
     )
     db.add(passenger)
     await db.commit()

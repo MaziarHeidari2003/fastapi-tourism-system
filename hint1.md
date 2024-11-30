@@ -99,3 +99,44 @@ async def reserve_flight_for_passengers(user_id, passenger_ids, flight_price, fl
     }
 
 ```
+
+The key changes in the second piece of code that resolved the MissingGreenlet issue are:
+
+1. Explicitly Selecting Columns
+In the second code:
+
+```python
+
+result = await db.execute(
+    select(models.Passenger.id, models.Passenger.name).filter_by(id=passenger_id, user_id=user_id)
+)
+passenger = result.first()
+```
+
+Here, only the required fields (id and name) are explicitly selected. This ensures that no lazy loading is triggered, as only these specific columns are fetched immediately from the database.
+
+2. Avoiding Full Object Fetch
+In the original code:
+
+```python
+result = await db.execute(select(models.Passenger).filter_by(id=passenger_id, user_id=user_id))
+passenger = result.scalar()
+This fetched the entire Passenger object, which includes lazy-loaded relationships or deferred columns, leading to the MissingGreenlet error when accessing those fields.
+```
+
+By selecting specific columns in the second code, you bypass lazy-loading and directly fetch only the data you need.
+
+3. Using first() Instead of scalar()
+In the second code:
+
+```python
+
+passenger = result.first()
+
+```
+This method safely extracts the first row of the query without returning a coroutine object, avoiding potential async context issues.
+
+**Why It Works:**
+
+Eager Loading: Ensures data is fully loaded during query execution, avoiding access to unloaded fields.
+Safer Field Access: By explicitly selecting fields, you reduce the chances of lazy-loading errors in async environments.
