@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import timedelta
+from fastapi.security import OAuth2PasswordRequestForm
+
 from .. import schemas, database, models, token
 from ..hashing import Hash
 
@@ -10,7 +12,8 @@ router = APIRouter(
 )
 
 @router.post('/login')
-async def login(request: schemas.Login, db: AsyncSession = Depends(database.get_db)):
+async def login(request: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(database.get_db)):
+    # Asynchronous query to fetch the user
     stmt = select(models.User).where(models.User.username == request.username)
     result = await db.execute(stmt)
     user = result.scalars().first()
@@ -21,6 +24,7 @@ async def login(request: schemas.Login, db: AsyncSession = Depends(database.get_
             detail="Invalid credentials"
         )
 
+    # Verify password asynchronously
     if not Hash.verify(user.password, request.password):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
