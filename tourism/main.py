@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from . import models
 from .database import engine
 from .routers import transportation, user, authentication
-import asyncio
 
 app = FastAPI()
 
