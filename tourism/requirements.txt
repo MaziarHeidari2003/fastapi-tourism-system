@@ -9,3 +9,5 @@ aiosqlite
 fastapi-cache
 redis
 greenlet
+httpx
+aioredis

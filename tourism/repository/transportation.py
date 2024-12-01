@@ -116,28 +116,37 @@ async def create_passenger(parent_user_id, name, national_id, age, gender, db: A
 #     return flights
 
 
-# Example list of provider endpoints
-PROVIDERS = [
-    "https://provider1.com/api/flights",
-    "https://provider2.com/api/flights",
-    "https://provider3.com/api/flights",
-    "https://provider4.com/api/flights",
-    "https://provider5.com/api/flights",
-]
-
 import httpx
 import asyncio
+import aioredis
+import json
+
+redis = aioredis.from_url("redis://localhost")
+
+PROVIDERS = [
+    "https://provider1.com/flights",
+    "https://provider2.com/flights"
+]
 
 async def fetch_flights_from_provider(url: str, params: dict):
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             response = await client.get(url, params=params)
             response.raise_for_status() 
-            return response.json()  
+            return response.json()
         except httpx.RequestError as e:
             return {"error": f"Failed to fetch from {url}: {str(e)}"}
         except httpx.HTTPStatusError as e:
             return {"error": f"Provider error: {str(e)}"}
+
+async def get_cached_flights(key: str):
+    cached_data = await redis.get(key)
+    if cached_data:
+        return json.loads(cached_data)
+    return None
+
+async def cache_flights(key: str, data: list, ttl: int = 3600):
+    await redis.setex(key, ttl, json.dumps(data))
 
 async def show_flights(origin_id: int, destination_id: int, departure_date: str):
     params = {
@@ -145,19 +154,31 @@ async def show_flights(origin_id: int, destination_id: int, departure_date: str)
         "destination_id": destination_id,
         "departure_date": departure_date,
     }
+    # Generate a unique cache key based on params
+    cache_key = f"flights_{origin_id}_{destination_id}_{departure_date}"
 
+    # Check Redis cache
+    cached_flights = await get_cached_flights(cache_key)
+    if cached_flights:
+        return cached_flights
+
+    # Fetch from providers if not in cache
     tasks = [fetch_flights_from_provider(url, params) for url in PROVIDERS]
     try:
         responses = await asyncio.gather(*tasks)
-
     except:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The endpoints nay be wrong")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Endpoints may be wrong")
+    
     flights = []
     for response in responses:
         if isinstance(response, dict) and "error" in response:
             continue
-        flights.extend(response)  
+        flights.extend(response)
+    
     if not flights:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
+    
+    # Cache the fetched flights
+    await cache_flights(cache_key, flights)
 
     return flights
