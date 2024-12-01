@@ -22,10 +22,19 @@ async def create_flight_route(
 async def all_airport(db: AsyncSession = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
     return await transportation.show_airports(db)
 
-@router.get("/desired-flight", response_model=List[schemas.AvailableFlights])
-async def available_flights(origin_id: int, destination_id: int, departure_date: str, db: AsyncSession = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
-    return await transportation.show_flights(origin_id, destination_id, departure_date, db)
+# @router.get("/desired-flight", response_model=List[schemas.AvailableFlights])
+# async def available_flights(origin_id: int, destination_id: int, departure_date: str, db: AsyncSession = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+#     return await transportation.show_flights(origin_id, destination_id, departure_date, db)
 
+
+
+@router.get("/desired-flights", response_model=List[dict]) 
+async def get_flights(
+    origin_id: int,
+    destination_id: int,
+    departure_date: str,
+):
+    return await transportation.show_flights(origin_id, destination_id, departure_date)
 
 
 

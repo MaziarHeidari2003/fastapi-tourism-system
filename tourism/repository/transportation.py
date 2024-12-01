@@ -101,17 +101,63 @@ async def create_passenger(parent_user_id, name, national_id, age, gender, db: A
     return passenger
 
 
-async def show_flights(origin_id: int, destination_id: int, departure_date: str, db: AsyncSession):
-    result = await db.execute(
-        select(models.Flight).filter(
-            models.Flight.origin_id == origin_id,
-            models.Flight.destination_id == destination_id,
-            models.Flight.departure_date == departure_date,
-        )
-    )
-    flights = result.scalars().all()
+# async def show_flights(origin_id: int, destination_id: int, departure_date: str, db: AsyncSession):
+#     result = await db.execute(
+#         select(models.Flight).filter(
+#             models.Flight.origin_id == origin_id,
+#             models.Flight.destination_id == destination_id,
+#             models.Flight.departure_date == departure_date,
+#         )
+#     )
+#     flights = result.scalars().all()
 
+#     if not flights:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
+#     return flights
+
+
+# Example list of provider endpoints
+PROVIDERS = [
+    "https://provider1.com/api/flights",
+    "https://provider2.com/api/flights",
+    "https://provider3.com/api/flights",
+    "https://provider4.com/api/flights",
+    "https://provider5.com/api/flights",
+]
+
+import httpx
+import asyncio
+
+async def fetch_flights_from_provider(url: str, params: dict):
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            response = await client.get(url, params=params)
+            response.raise_for_status() 
+            return response.json()  
+        except httpx.RequestError as e:
+            return {"error": f"Failed to fetch from {url}: {str(e)}"}
+        except httpx.HTTPStatusError as e:
+            return {"error": f"Provider error: {str(e)}"}
+
+async def show_flights(origin_id: int, destination_id: int, departure_date: str):
+    params = {
+        "origin_id": origin_id,
+        "destination_id": destination_id,
+        "departure_date": departure_date,
+    }
+
+    tasks = [fetch_flights_from_provider(url, params) for url in PROVIDERS]
+    try:
+        responses = await asyncio.gather(*tasks)
+
+    except:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The endpoints nay be wrong")
+    flights = []
+    for response in responses:
+        if isinstance(response, dict) and "error" in response:
+            continue
+        flights.extend(response)  
     if not flights:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
-    return flights
 
+    return flights
