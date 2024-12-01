@@ -128,6 +128,9 @@ PROVIDERS = [
     "https://provider2.com/flights"
 ]
 
+# to be  honest i used chatgpt for this part. Right now I understand what is happening 
+# but the implementation is not mine!
+
 async def fetch_flights_from_provider(url: str, params: dict):
     async with httpx.AsyncClient(timeout=10) as client:
         try:
