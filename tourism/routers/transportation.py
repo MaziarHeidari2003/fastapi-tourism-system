@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from .. import schemas, database, oauth2
+from .. import schemas, database, oauth2,models,utils
 from sqlalchemy.ext.asyncio import AsyncSession
 from tourism.repository import transportation
 from typing import List
@@ -40,9 +40,12 @@ async def get_flights(
 
 @router.post("/add-passengers", response_model=schemas.Passengers)
 async def new_passenger(
-    parent_user_id: int, name: str, national_id: str, age: int, gender: str, current_user: schemas.User = Depends(oauth2.get_current_user), db: AsyncSession = Depends(database.get_db)
+        name: str, national_id: str, age: int, gender: str,
+        current_user: schemas.User = Depends(oauth2.get_current_user),
+        parent_user: models.User = Depends(utils.get_current_user),
+        db: AsyncSession = Depends(database.get_db)
 ):
-    return await transportation.create_passenger(parent_user_id, name, national_id, age, gender, db)
+    return await transportation.create_passenger(name, national_id, age, gender,parent_user,db)
 
 
 

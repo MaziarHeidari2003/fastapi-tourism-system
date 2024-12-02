@@ -91,9 +91,9 @@ async def reserve_flight_for_passengers(user_id, passenger_ids, flight_price, fl
 
 
 
-async def create_passenger(parent_user_id, name, national_id, age, gender, db: AsyncSession):
+async def create_passenger(name, national_id, age, gender,parent_user, db: AsyncSession):
     passenger = models.Passenger(
-        name=name, national_id=national_id, age=age, gender=gender, parent_user_id=parent_user_id
+        name=name, national_id=national_id, age=age, gender=gender, parent_user_id=parent_user.id
     )
     db.add(passenger)
     await db.commit()
@@ -101,87 +101,87 @@ async def create_passenger(parent_user_id, name, national_id, age, gender, db: A
     return passenger
 
 
-# async def show_flights(origin_id: int, destination_id: int, departure_date: str, db: AsyncSession):
-#     result = await db.execute(
-#         select(models.Flight).filter(
-#             models.Flight.origin_id == origin_id,
-#             models.Flight.destination_id == destination_id,
-#             models.Flight.departure_date == departure_date,
-#         )
-#     )
-#     flights = result.scalars().all()
+async def show_flights(origin_id: int, destination_id: int, departure_date: str, db: AsyncSession):
+    result = await db.execute(
+        select(models.Flight).filter(
+            models.Flight.origin_id == origin_id,
+            models.Flight.destination_id == destination_id,
+            models.Flight.departure_date == departure_date,
+        )
+    )
+    flights = result.scalars().all()
 
-#     if not flights:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
-#     return flights
-
-
-import httpx
-import asyncio
-import aioredis
-import json
-
-redis = aioredis.from_url("redis://localhost")
-
-PROVIDERS = [
-    "https://provider1.com/flights",
-    "https://provider2.com/flights"
-]
-
-# to be  honest i used chatgpt for this part. Right now I understand what is happening 
-# but the implementation is not mine!
-
-async def fetch_flights_from_provider(url: str, params: dict):
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            response = await client.get(url, params=params)
-            response.raise_for_status() 
-            return response.json()
-        except httpx.RequestError as e:
-            return {"error": f"Failed to fetch from {url}: {str(e)}"}
-        except httpx.HTTPStatusError as e:
-            return {"error": f"Provider error: {str(e)}"}
-
-async def get_cached_flights(key: str):
-    cached_data = await redis.get(key)
-    if cached_data:
-        return json.loads(cached_data)
-    return None
-
-async def cache_flights(key: str, data: list, ttl: int = 3600):
-    await redis.setex(key, ttl, json.dumps(data))
-
-async def show_flights(origin_id: int, destination_id: int, departure_date: str):
-    params = {
-        "origin_id": origin_id,
-        "destination_id": destination_id,
-        "departure_date": departure_date,
-    }
-    # Generate a unique cache key based on params
-    cache_key = f"flights_{origin_id}_{destination_id}_{departure_date}"
-
-    # Check Redis cache
-    cached_flights = await get_cached_flights(cache_key)
-    if cached_flights:
-        return cached_flights
-
-    # Fetch from providers if not in cache
-    tasks = [fetch_flights_from_provider(url, params) for url in PROVIDERS]
-    try:
-        responses = await asyncio.gather(*tasks)
-    except:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Endpoints may be wrong")
-    
-    flights = []
-    for response in responses:
-        if isinstance(response, dict) and "error" in response:
-            continue
-        flights.extend(response)
-    
     if not flights:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
-    
-    # Cache the fetched flights
-    await cache_flights(cache_key, flights)
-
     return flights
+
+
+# import httpx
+# import asyncio
+# import aioredis
+# import json
+
+# redis = aioredis.from_url("redis://localhost")
+
+# PROVIDERS = [
+#     "https://provider1.com/flights",
+#     "https://provider2.com/flights"
+# ]
+
+# # to be  honest i used chatgpt for this part. Right now I understand what is happening 
+# # but the implementation is not mine!
+
+# async def fetch_flights_from_provider(url: str, params: dict):
+#     async with httpx.AsyncClient(timeout=10) as client:
+#         try:
+#             response = await client.get(url, params=params)
+#             response.raise_for_status() 
+#             return response.json()
+#         except httpx.RequestError as e:
+#             return {"error": f"Failed to fetch from {url}: {str(e)}"}
+#         except httpx.HTTPStatusError as e:
+#             return {"error": f"Provider error: {str(e)}"}
+
+# async def get_cached_flights(key: str):
+#     cached_data = await redis.get(key)
+#     if cached_data:
+#         return json.loads(cached_data)
+#     return None
+
+# async def cache_flights(key: str, data: list, ttl: int = 3600):
+#     await redis.setex(key, ttl, json.dumps(data))
+
+# async def show_flights(origin_id: int, destination_id: int, departure_date: str):
+#     params = {
+#         "origin_id": origin_id,
+#         "destination_id": destination_id,
+#         "departure_date": departure_date,
+#     }
+#     # Generate a unique cache key based on params
+#     cache_key = f"flights_{origin_id}_{destination_id}_{departure_date}"
+
+#     # Check Redis cache
+#     cached_flights = await get_cached_flights(cache_key)
+#     if cached_flights:
+#         return cached_flights
+
+#     # Fetch from providers if not in cache
+#     tasks = [fetch_flights_from_provider(url, params) for url in PROVIDERS]
+#     try:
+#         responses = await asyncio.gather(*tasks)
+#     except:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Endpoints may be wrong")
+    
+#     flights = []
+#     for response in responses:
+#         if isinstance(response, dict) and "error" in response:
+#             continue
+#         flights.extend(response)
+    
+#     if not flights:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
+    
+#     # Cache the fetched flights
+#     await cache_flights(cache_key, flights)
+
+#     return flights
