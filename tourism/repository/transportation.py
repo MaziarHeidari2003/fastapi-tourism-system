@@ -115,6 +115,9 @@ async def show_flights(origin_id: int, destination_id: int, departure_date: str,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No flights found")
     return flights
 
+#This part is the something like the show_flight function but with the usage
+# of caching . It had some errors I couldn't resolve so I had comment it!
+
 
 # import httpx
 # import asyncio
