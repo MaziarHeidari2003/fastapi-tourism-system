@@ -18,7 +18,10 @@ async def create(request: schemas.User, db: AsyncSession):
 
 
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload  # or use joinedload if appropriate
+from sqlalchemy.orm import selectinload 
+# it is a part of the eagerloading techniques helping two load the related data in a seperate query
+# options modifies the query by adding query-specific configurations 
+# it comes in handy while using selectinjoinT joinedloadT subqueryload 
 
 async def get_user_orders(current_user, db: AsyncSession):
     result = await db.execute(

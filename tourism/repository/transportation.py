@@ -39,7 +39,10 @@ async def show_airports(db: AsyncSession):
 
 async def reserve_flight_for_passengers(user_id, passenger_ids, flight_price, flight_id, db: AsyncSession):
     user_result = await db.execute(select(models.User).filter_by(id=user_id))
-    user = user_result.scalar()
+    user = user_result.scalar() 
+    # proocesses the result of a query and returns a single value of obj
+    #  you can even use scalars to have collection of scalar values
+    # or i could use scalar_one() => raises exception when more that one result is found
     if not user:
         raise HTTPException(status_code=404, detail=f"User with {user_id} not found")
 
