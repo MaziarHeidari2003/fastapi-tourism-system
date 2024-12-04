@@ -191,3 +191,19 @@ async def show_flights(origin_id: int, destination_id: int, departure_date: str,
 #     await cache_flights(cache_key, flights)
 
 #     return flights
+
+
+
+
+
+
+
+# create task in asyncronous 
+# design pattern
+# providers and other 
+# runnig nmultiple workers in one project while using django
+
+# how to use multiple frameworks in one project => search
+# log the requests and the time of each reaquest and see what happens to the time of the response when the users increase
+
+# load test!!!
